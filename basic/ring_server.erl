@@ -28,14 +28,14 @@ setup_pids(N, L) ->
 head_loop(Next) ->
   receive
     {link, N} ->
-      io:format("link ~p~p~n", [self(), N]),
+      %io:format("link ~p~p~n", [self(), N]),
       head_loop(N);
     {start, Message} ->
-      io:format("start ~p~p~n", [self(), Next]),
+      io:format("start ~p ~p~n", [self(), Next]),
       Next ! {ring, Message},
       head_loop(Next);
-    {ring, _Msg} ->
-      io:format("head received ring~n", []),
+    {ring, Msg} ->
+      io:format("head got message ~p ~p~n", [self(), Msg]),
       Next ! stop,
       head_loop(Next);
     stop ->
@@ -47,11 +47,11 @@ loop(Next) ->
     {link, P} ->
       loop(P);
     {ring, Msg} ->
-      io:format("loop ~p~p~n", [self(), Next]),
+      io:format("got message ~p ~p~n", [self(), Msg]),
       Next ! {ring, Msg},
       loop(Next);
     stop ->
-      io:format("stop ~p~p~n", [self(), Next]),
+      %io:format("stop ~p~p~n", [self(), Next]),
       Next ! stop,
       ok           % ok! 
   end.

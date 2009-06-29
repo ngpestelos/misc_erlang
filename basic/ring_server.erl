@@ -1,39 +1,44 @@
 -module(ring_server).
 
--export([start/3]).
+-export([start/2]).
 -export([loop/1, head_loop/1]).
 
-start(M, N, Message) ->
-  [Next | Tail] = setup_pids(N - 1, []),
-  link_pids(Next, Tail),
-  Head = spawn(ring_server, head_loop, [Next]),
+start(N, Message) ->
+  Head = spawn(ring_server, head_loop, [nopid]),
   register(head, Head),
+  [Next | _T] = setup_pids(N-1, []),
+  head ! {link, Next},
   head ! {start, Message}.
 
-setup_pids(0, L) ->
-  lists:reverse(L);
-setup_pids(N, L) ->
-  P = spawn(ring_server, loop, [nopid]),
-  setup_pids(N-1, [P | L]).
 
-link_pids(Pid, []) ->
-  Pid ! {link, head};
-link_pids(Pid, [Next | Rest]) ->
-  Pid ! {link, Next},
-  link_pids(Next, Rest).
+setup_pids(0, L) ->
+  L;
+setup_pids(N, []) ->
+  % will be last
+  P = spawn(ring_server, loop, [nopid]),
+  P ! {link, head},
+  setup_pids(N-1, [P]);
+setup_pids(N, L) ->
+  [Next | _T] = L,
+  P = spawn(ring_server, loop, [nopid]),
+  P ! {link, Next},
+  setup_pids(N-1, [P | L]). 
+
 
 head_loop(Next) ->
   receive
+    {link, N} ->
+      io:format("link ~p~p~n", [self(), N]),
+      head_loop(N);
+    {start, Message} ->
+      io:format("start ~p~p~n", [self(), Next]),
+      Next ! {ring, Message},
+      head_loop(Next);
     {ring, _Msg} ->
-      io:format("ring ~p~p~n", [self(), Next]),
+      io:format("head received ring~n", []),
       Next ! stop,
       head_loop(Next);
-    {start, Msg} ->
-      io:format("start ~p~p~n", [self(), Next]),
-      Next ! {ring, Msg},
-      head_loop(Next);
     stop ->
-      io:format("head stop ~p~p~n", [self(), Next]),
       ok
   end.
 

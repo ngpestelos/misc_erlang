@@ -9,4 +9,4 @@ create(N) ->
 create(0, L) ->
   L;
 create(N, L) ->
-  create(N - 1, [N | L]). % try also appending in front, then reverse 
+  create(N - 1, [N | L]).

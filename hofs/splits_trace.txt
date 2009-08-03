@@ -1,0 +1,47 @@
+Please refer to Erlang Programming, p. 199-200.
+
+First, let's figure out how the splits function works. From the book, we have this definition:
+
+1 splits([]) ->
+2  [{[], []}];
+3 splits([H | T] = Ys) ->
+4  [ {[], Ys} | [ {[H | As], Bs} || {As, Bs} <- splits(T)]].
+
+Here's what we know:
+ 1. This function takes as input a list and based on the input, it generates a list of partitions. Each partition is a tuple containing two lists.
+ 2. The first clause covers the case of an empty list as input. It returns a list containing one tuple having two empty lists (nothing to split). This serves as the terminating case.
+ 3. In line 3, the argument of the splits clause contains a pattern match: [H | T] = Ys. Ys is bound to the list passed as input while H and T are bound to the Head and Tail of the list.
+ 4. Line 4 contains a recursive call generating the input for a list comprehension which will then be appended to a tuple containing an empty list and the initial list (Ys).
+
+Tracing splits([1]):
+
+  splits([1 = H | [] = T] = Ys) ->
+    [ {[], [1]} | [ {[1 | As], Bs} || {As, Bs} <- splits([])] ]
+      splits([]) -> [{[], []}]
+      [ {[], [1]} | [ {[1 | []], []} ]
+    [ {[], [1]} | [ {[1], []} ]
+  [ {[], [1]}, {[1], []} ]
+
+Tracing splits([1, 2]):
+
+  splits([1 = H | [2] = T] = Ys) ->
+    [ {[], [1,2]} | [ {[1 | As], Bs} || {As, Bs} <- splits([2]) ]
+    splits([2]) -> [ {[], [2]}, {[2], []} ] % from the previous trace
+      [ {[], [1,2]} | [ {[1 | []], [2]}, {[1 | [2]], []} ] % list comp 
+    [ {[], [1,2]} | [ {[1], [2]}, {[1,2], []} ]
+  [ {[], [1,2]}, {[1], [2]}, {[1,2], []} ]
+
+Tracing splits([1,2,3]):
+
+  splits([1 = H | [2,3] = T = Ys) ->
+    [ {[], [1,2,3]} | [ {[1 | As], Bs} || {As, Bs} <- splits([2,3]) ]
+      splits([2,3]) -> [ {[], [2,3]}, {[2], [3]}, {[2,3], []} ]
+    [ {[], [1,2,3]} | [ {[1 | []], [2,3]}, {[1 | [2]], [3]}, {[1 | [2,3]], []} ]
+  [ {[], [1,2,3]}, {[1], [2,3]}, {[1,2], [3]}, {[1,2,3], []} ]
+
+A note on the list comprehension:
+  This generates a list of {As, Bs} by recursively calling splits on the tail of the list.
+  The first list in the generated tuple is then appended the head.
+
+A note on partitions:
+  How many steps to move the elements from the second list to the first list.

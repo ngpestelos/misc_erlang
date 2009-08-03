@@ -1,0 +1,15 @@
+(definitions)
+
+F = fun(X, Acc) -> X + Acc end
+
+foldl(_F, Acc, []) ->
+  Acc;
+foldl(F, Acc, [H | T]) ->
+  foldl(F, F(H, Acc), T).
+
+(trace)
+
+foldl(F, 0, [1,1])
+  foldl(F, F(1, 0), [1])
+    foldl(F, F(1, 1), [])  # F(1, 0) = 1
+      2
